@@ -1,0 +1,60 @@
+# config.yaml
+
+migration:
+  name: "Legacy to Modern Migration"
+  batch_size: 500           # rows per batch
+  max_retries: 3            # retry failed batches this many times
+  resume_on_failure: true   # resume from last checkpoint if crash
+
+source:
+  type: mysql               # mysql | postgresql | sqlite | mongodb | mssql | oracle
+  host: ${LEGACY_DB_HOST}
+  port: ${LEGACY_DB_PORT}
+  database: ${LEGACY_DB_NAME}
+  user: ${LEGACY_DB_USER}
+  password: ${LEGACY_DB_PASSWORD}
+
+target:
+  type: postgresql          # mysql | postgresql | sqlite | mongodb
+  host: ${MODERN_DB_HOST}
+  port: ${MODERN_DB_PORT}
+  database: ${MODERN_DB_NAME}
+  user: ${MODERN_DB_USER}
+  password: ${MODERN_DB_PASSWORD}
+
+tables:
+  - name: customers
+    source_table: CUST_MASTER
+    target_table: customers
+    column_mappings:
+      CUST_ID: id
+      CUST_NAME: full_name
+      BIRTH_DT: date_of_birth
+      STATUS: is_active
+    transformations:
+      CUST_ID: "cast_to_int"
+      CUST_NAME: "title_case"
+      BIRTH_DT: "parse_date_YYYYMMDD"
+      STATUS: "map_values:A=True,I=False"
+
+  - name: orders
+    source_table: ORD_MASTER
+    target_table: orders
+    column_mappings:
+      ORD_ID: id
+      CUST_NO: customer_id
+      ORD_DT: order_date
+      TOTAL_AMT: total_amount
+    transformations:
+      ORD_ID: "cast_to_int"
+      CUST_NO: "cast_to_int"
+      ORD_DT: "parse_date_YYYYMMDD"
+      TOTAL_AMT: "cast_to_decimal"
+
+logging:
+  level: INFO               # DEBUG | INFO | WARNING | ERROR
+  file: logs/migration.log
+
+reporting:
+  output_dir: reports/
+  format: markdown          # markdown | html | txt
