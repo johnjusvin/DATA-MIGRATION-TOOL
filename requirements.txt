@@ -11,3 +11,13 @@ great-expectations>=0.18.0
 colorlog>=6.7.0
 langchain-ollama>=0.1.0
 litellm>=1.0.0
+fastapi
+uvicorn
+pytest
+pytest-cov
+flake8
+scikit-learn
+cryptography
+psycopg2-binary
+pymongo
+jinja2\naiofiles

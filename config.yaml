@@ -2,12 +2,19 @@
 
 migration:
   name: "Legacy to Modern Migration"
-  batch_size: 500           # rows per batch
+  # Performance Tuning
+  batch_size: 500           # Initial rows per batch
+  dynamic_batching: true    # Scale batch size depending on load times
+  max_workers: 4            # Limit thread/processes for parallel execution
+  
   max_retries: 3            # retry failed batches this many times
   resume_on_failure: true   # resume from last checkpoint if crash
+  dlq_dir: "dlq"            # Dead Letter Queue directory for failed rows
+  log_level: "INFO"         # Logging level (DEBUG, INFO, WARNING, ERROR)
+
 
 source:
-  type: mysql               # mysql | postgresql | sqlite | mongodb | mssql | oracle
+  type: postgresql               # mysql | postgresql | sqlite | mongodb | mssql | oracle
   host: ${LEGACY_DB_HOST}
   port: ${LEGACY_DB_PORT}
   database: ${LEGACY_DB_NAME}

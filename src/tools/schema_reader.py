@@ -70,3 +70,55 @@ def get_table_row_counts() -> str:
             counts[table_name] = result.scalar()
 
     return json.dumps(counts, indent=2)
+
+@tool("Detect Schema Drift")
+def detect_schema_drift(baseline_schema_json: str) -> str:
+    """Compares a previously recorded legacy schema against the live legacy database to detect mid-migration dropped/added columns.
+    
+    Args:
+        baseline_schema_json: JSON string of the older schema
+        
+    Returns:
+        JSON string containing the drift alert or indicating 'no_drift'
+    """
+    if not baseline_schema_json or baseline_schema_json.strip() == "{}":
+        return json.dumps({"status": "error", "message": "No baseline schema provided"})
+        
+    baseline = json.loads(baseline_schema_json)
+    live_schema_str = read_legacy_schema.func() # Or directly run logic
+    live = json.loads(live_schema_str)
+    
+    drift_report = {
+        "status": "stable",
+        "tables_added": [],
+        "tables_dropped": [],
+        "columns_added": {},
+        "columns_dropped": {}
+    }
+    
+    # Check tables
+    baseline_tables = set(baseline.keys())
+    live_tables = set(live.keys())
+    
+    drift_report["tables_added"] = list(live_tables - baseline_tables)
+    drift_report["tables_dropped"] = list(baseline_tables - live_tables)
+    
+    # Check columns for common tables
+    for table in baseline_tables.intersection(live_tables):
+        base_cols = {col["name"]: col["type"] for col in baseline[table]["columns"]}
+        live_cols = {col["name"]: col["type"] for col in live[table]["columns"]}
+        
+        added_cols = list(set(live_cols.keys()) - set(base_cols.keys()))
+        dropped_cols = list(set(base_cols.keys()) - set(live_cols.keys()))
+        
+        if added_cols:
+            drift_report["columns_added"][table] = added_cols
+        if dropped_cols:
+            drift_report["columns_dropped"][table] = dropped_cols
+            
+    # Determine if alert is needed
+    if any([drift_report["tables_added"], drift_report["tables_dropped"], 
+            drift_report["columns_added"], drift_report["columns_dropped"]]):
+        drift_report["status"] = "DRIFT_DETECTED"
+        
+    return json.dumps(drift_report, indent=2)

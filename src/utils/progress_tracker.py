@@ -10,8 +10,15 @@ def load_progress() -> dict:
     os.makedirs("progress", exist_ok=True)
     if not os.path.exists(PROGRESS_FILE):
         return {}
-    with open(PROGRESS_FILE, "r") as f:
-        return json.load(f)
+    try:
+        with open(PROGRESS_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
+        return {}
+
+def get_progress() -> dict:
+    """Reads the current progress file for the status dashboard."""
+    return load_progress()
 
 
 def save_progress(table_name: str, status: str, rows_done: int, last_batch: int):
