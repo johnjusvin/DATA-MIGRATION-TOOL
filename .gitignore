@@ -41,3 +41,10 @@ build/
 # CrewAI / LiteLLM cache
 .crewai/
 .litellm/
+
+# Dead Letter Queue
+dlq/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
